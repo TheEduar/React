@@ -1,36 +1,41 @@
-const getRecentOrders = async (params = {}) => {
-  const baseUrl = 'https://donrepuestos.com/wp-json/wc/v3/orders';
+const BASE_URL = 'https://donrepuestos.com/wp-json/wc/v3/orders';
+const AUTHORIZATION_HEADER = `Basic ${process.env.REACT_APP_API_KEY}`;
 
+/**
+ * Obtiene los pedidos recientes.
+ * @param {Object} params - Parámetros opcionales para la consulta.
+ * @returns {Promise<Object>} - Pedidos y el total de pedidos.
+ */
+const getRecentOrders = async (params = {}) => {
   const queryParams = new URLSearchParams({
-    ...params,
     orderby: 'date',
     order: 'desc',
-    per_page: 100, // Límite de 100 productos por solicitud
+    per_page: 100, // Límite de 100 pedidos por solicitud
     page: params.page || 1, // Página actual
+    ...params,
   }).toString();
 
-  const url = `${baseUrl}?${queryParams}`;
+  const url = `${BASE_URL}?${queryParams}`;
 
   const headers = new Headers({
-    'Authorization': 'Basic Y2tfYTU1ODM0NzU5NjYxOGFlYzBhOTFhZWY0OGY1MjViYzUzZWUwOTExZDpjc184OTE4MmM1ZTlkYTE4YzI5NGFlNjJjMzNmYmUxODJhY2YxZTkyYjkx',
+    Authorization: AUTHORIZATION_HEADER,
   });
 
   try {
     const response = await fetch(url, { method: 'GET', headers });
 
     if (!response.ok) {
-      throw new Error(`Error en la solicitud: ${response.statusText}`);
+      throw new Error(`Error en la solicitud: ${response.status} ${response.statusText}`);
     }
 
     const orders = await response.json();
-    const totalOrders = response.headers.get('x-wp-total'); // Total de pedidos disponibles
+    const totalOrders = parseInt(response.headers.get('x-wp-total') || 0, 10);
 
-    return { orders, total_orders: parseInt(totalOrders, 10) };
+    return { orders, total_orders: totalOrders };
   } catch (error) {
-    console.error('Error al obtener los pedidos:', error);
+    console.error('[Error al obtener los pedidos]', { message: error.message, stack: error.stack });
     throw error;
   }
 };
 
 export default getRecentOrders;
- 

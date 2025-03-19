@@ -4,33 +4,39 @@ import { OrdersContext } from './OrdersContext';
 import { App } from '@capacitor/app'; // Plugin Capacitor para manejar herramientas móviles
 import '../../css/Orders/orders_details.css';
 
+// Componente para mostrar datos de facturación y envío
+const BillingShippingInfo = ({ title, data }) => (
+  <div className="column">
+    <h3>{title}</h3>
+    {Object.entries(data).map(([label, value]) => (
+      <p key={label}>
+        <strong>{label}:</strong> {value || 'N/A'}
+      </p>
+    ))}
+  </div>
+);
+
 const OrderDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { orders } = useContext(OrdersContext);
-  const order = orders.find((pedido) => pedido.id === parseInt(id));
+  const order = orders.find((pedido) => pedido.id === parseInt(id, 10));
 
-  // Manejo de la nagevación en movil
+  // Manejo de la navegación en móvil
   useEffect(() => {
-    
-
     const registerBackButtonListener = async () => {
       const listener = await App.addListener('backButton', (event) => {
         event.preventDefault();
         navigate('/');
       });
-
-      // Eliminar el evento
       return () => {
-        if (listener && typeof listener.remove === 'function') {
-          listener.remove(); // Eliminar correctamente el listener
+        if (listener?.remove) {
+          listener.remove();
         }
       };
     };
 
     const cleanup = registerBackButtonListener();
-
-    // Limpieza al desmontar el componente
     return () => {
       if (typeof cleanup === 'function') cleanup();
     };
@@ -43,21 +49,16 @@ const OrderDetails = () => {
     const lineItemsTotal = order.line_items.reduce((acc, item) => acc + parseFloat(item.total || 0), 0);
     const feeLinesTotal = order.fee_lines.reduce((acc, fee) => acc + parseFloat(fee.total || 0), 0);
     const shippingTotal = parseFloat(order.shipping_lines[0]?.total || 0);
-    return { lineItemsTotal, feeLinesTotal, shippingTotal, orderTotal: lineItemsTotal + feeLinesTotal + shippingTotal };
+
+    return {
+      lineItemsTotal,
+      feeLinesTotal,
+      shippingTotal,
+      orderTotal: lineItemsTotal + feeLinesTotal + shippingTotal,
+    };
   }, [order]);
 
   if (!order) return <p>No se encontró el pedido.</p>;
-
-  const BillingShippingInfo = ({ title, data }) => (
-    <div className="column">
-      <h3>{title}</h3>
-      {Object.entries(data).map(([label, value]) => (
-        <p key={label}>
-          <strong>{label}:</strong> {value || 'N/A'}
-        </p>
-      ))}
-    </div>
-  );
 
   return (
     <div className="order-details">
@@ -82,10 +83,9 @@ const OrderDetails = () => {
           title="Facturación"
           data={{
             Nombre: `${order.billing.first_name} ${order.billing.last_name}`,
-            // Validación de la identificación
-            Documento: order.created_via === "woomelly_mercadolibre"
-            ? order.meta_data.find(meta => meta.key === '_wm_billing_info')?.value?.doc_number || 'N/A'
-            : order.meta_data.find(meta => meta.key === 'cedula2')?.value || 'N/A',
+            Documento: order.created_via === 'woomelly_mercadolibre'
+              ? order.meta_data.find(meta => meta.key === '_wm_billing_info')?.value?.doc_number || 'N/A'
+              : order.meta_data.find(meta => meta.key === 'cedula2')?.value || 'N/A',
             Teléfono: order.billing.phone || 'No registrado',
             Correo: order.billing.email || 'No registrado',
           }}
@@ -142,12 +142,9 @@ const OrderDetails = () => {
       </div>
 
       {/* Botón flotante para regresar */}
-      <button 
-        onClick={() => navigate('/')} 
-        className="floating-button"
-      >
+      <button onClick={() => navigate('/')} className="floating-button">
         <svg xmlns="http://www.w3.org/2000/svg" className="svg-icon" width="30" height="30" fill="var(--dark-blue)" viewBox="0 0 16 16">
-          <path fillRule="evenodd" d="M15 8a.5.5 0 0 1-.5.5H3.707l3.147 3.146a.5.5 0 0 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L3.707 7.5H14.5a.5.5 0 0 1 .5.5z"/>
+          <path fillRule="evenodd" d="M15 8a.5.5 0 0 1-.5.5H3.707l3.147 3.146a.5.5 0 0 1-.708.708l-4-4a.5.5 0 0 1 0-.708l4-4a.5.5 0 1 1 .708.708L3.707 7.5H14.5a.5.5 0 0 1 .5.5z" />
         </svg>
       </button>
     </div>

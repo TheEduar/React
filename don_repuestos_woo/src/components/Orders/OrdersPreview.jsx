@@ -23,7 +23,12 @@ const OrdersTables = () => {
 
       if (currentBatch.length < 100) {
         const data = await getRecentOrders({ page: batchPage });
-        setOrders((prevOrders) => [...prevOrders, ...data.orders]);
+        // Ajusta el total del pedido directamente desde el backend
+        const adjustedOrders = data.orders.map((pedido) => ({
+          ...pedido,
+          total: pedido.total // Asume que el backend ya incluye el costo de envío en este valor
+        }));
+        setOrders((prevOrders) => [...prevOrders, ...adjustedOrders]);
         setTotalOrders(data.total_orders);
       }
     } catch (error) {
@@ -39,7 +44,7 @@ const OrdersTables = () => {
     return orders.slice(startIndex, startIndex + ORDERS_PER_PAGE);
   }, [currentPage, orders]);
 
-  // Cambio de pagina
+  // Cambio de página
   const handlePageChange = async (page) => {
     if (page >= 1 && page <= totalPages) {
       await fetchOrdersBatch(page);
@@ -84,9 +89,7 @@ const OrdersTables = () => {
               {index + 1}
             </option>
           ))}
-        </select>de {totalPages}</span>
-
-        
+        </select> de {totalPages}</span>
 
         <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage >= totalPages}>
           Página Siguiente
